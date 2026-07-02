@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企劃手帳｜每日待辦</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EAEDE3;
+    --paper:#F8F7F2;
+    --paper-2:#FFFFFF;
+    --ink:#28323A;
+    --ink-soft:#6B7480;
+    --line:#DBD9CB;
+    --accent:#4C4670;
+    --accent-light:#8b84ad;
+    --danger:#B5533C;
+    --today-c:#B8863B;
+
+    --morning-bg:#FCEEE0;
+    --noon-bg:#FBF3D6;
+    --evening-bg:#E6E9F4;
+
+    --font-display:'Noto Serif TC', serif;
+    --font-body:'Noto Sans TC', sans-serif;
+    --font-mono:'Space Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font-body);
+    display:flex; min-height:100vh;
+  }
+  a,button{font-family:inherit;}
+  ::selection{background:var(--accent-light); color:#fff;}
+
+  /* ---------- Sidebar ---------- */
+  #sidebar{
+    width:232px; flex-shrink:0; background:var(--paper);
+    border-right:1px solid var(--line);
+    height:100vh; position:sticky; top:0; overflow-y:auto;
+    padding:30px 0 20px;
+    display:flex; flex-direction:column;
+  }
+  .brand{
+    font-family:var(--font-display); font-weight:900; font-size:1.28rem;
+    padding:0 26px 6px; letter-spacing:.02em;
+  }
+  .brand small{display:block; font-family:var(--font-mono); font-weight:400; font-size:.68rem; color:var(--ink-soft); letter-spacing:.08em; margin-top:4px;}
+  .tabs{margin-top:22px; flex:1;}
+  .tab{
+    display:flex; align-items:center; gap:11px;
+    padding:13px 22px; cursor:pointer; user-select:none;
+    color:var(--ink-soft); font-size:.95rem; font-weight:500;
+    border-left:4px solid transparent; position:relative;
+    transition:background .15s, color .15s;
+  }
+  .tab:hover{background:rgba(40,50,58,0.04);}
+  .tab .ico{font-size:1.05rem; width:20px; text-align:center;}
+  .tab .label{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .tab.active{color:var(--ink); font-weight:700; background:rgba(40,50,58,0.045); border-left-color:var(--tab-c,var(--accent));}
+  .tab .chip{
+    margin-left:auto; width:9px; height:20px; background:var(--tab-c,var(--accent));
+    clip-path:polygon(0 0, 65% 0, 100% 50%, 65% 100%, 0 100%);
+    opacity:.85; flex-shrink:0;
+  }
+  .sidebar-foot{padding:14px 22px 0; border-top:1px solid var(--line); margin-top:10px;}
+  .sidebar-foot p{font-size:.72rem; color:var(--ink-soft); line-height:1.6; margin:12px 0 0;}
+  .manage-btn{
+    width:100%; background:transparent; border:1px solid var(--line); border-radius:8px;
+    padding:9px 10px; font-size:.8rem; color:var(--ink-soft); cursor:pointer;
+    display:flex; align-items:center; gap:6px; justify-content:center;
+  }
+  .manage-btn:hover{background:rgba(0,0,0,0.04); color:var(--ink);}
+
+  /* ---------- Main ---------- */
+  #content{flex:1; padding:44px 52px 120px; max-width:1080px; margin:0 auto; width:100%;}
+  .page-head{margin-bottom:30px;}
+  .eyebrow{font-family:var(--font-mono); font-size:.72rem; letter-spacing:.12em; color:var(--ink-soft); text-transform:uppercase;}
+  h1.page-title{font-family:var(--font-display); font-size:2.1rem; font-weight:900; margin:6px 0 0; line-height:1.25;}
+  .cat-band{height:6px; border-radius:4px; width:64px; margin-top:14px; background:var(--band-c,var(--accent));}
+
+  /* ---------- Hero / urgent strip ---------- */
+  .urgent-wrap{margin-bottom:38px;}
+  .urgent-title{font-family:var(--font-display); font-size:1.05rem; font-weight:700; margin:0 0 12px; display:flex; align-items:center; gap:8px;}
+  .urgent-row{display:flex; gap:14px; flex-wrap:wrap;}
+  .urgent-card{
+    background:var(--paper-2); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; min-width:220px; flex:1 1 220px;
+    border-top:4px solid var(--cat-c,var(--accent));
+    box-shadow:0 2px 10px rgba(40,30,10,0.04);
+  }
+  .urgent-card .cat-tag{font-size:.68rem; font-weight:700; color:var(--cat-c); letter-spacing:.04em;}
+  .urgent-card .name{font-weight:700; margin:6px 0 8px; font-size:1rem;}
+  .empty-note{
+    background:var(--paper-2); border:1px dashed var(--line); border-radius:12px;
+    padding:22px; color:var(--ink-soft); font-size:.92rem;
+  }
+
+  /* ---------- Period columns ---------- */
+  .periods{display:grid; grid-template-columns:repeat(3, 1fr); gap:22px;}
+  .period-col{background:var(--wash,var(--paper)); border-radius:16px; padding:18px 16px 22px; min-height:160px;}
+  .period-head{display:flex; align-items:center; gap:8px; font-family:var(--font-display); font-weight:700; font-size:1.02rem; margin-bottom:14px;}
+  .period-head .cnt{margin-left:auto; font-family:var(--font-mono); font-size:.78rem; color:var(--ink-soft); background:rgba(255,255,255,.6); padding:1px 8px; border-radius:20px;}
+  .period-empty{color:var(--ink-soft); font-size:.85rem; padding:10px 4px; opacity:.8;}
+
+  /* ---------- Task card ---------- */
+  .task-card{
+    background:var(--paper-2); border:1px solid var(--line); border-left:5px solid var(--cat-c,var(--accent));
+    border-radius:10px; padding:13px 14px; margin-bottom:10px;
+    transition:opacity .35s ease, transform .35s ease, max-height .35s ease;
+  }
+  .task-card.removing{opacity:0; transform:translateX(24px) scale(.96);}
+  .task-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .task-name{font-weight:700; font-size:.95rem; line-height:1.4;}
+  .task-cat{font-size:.66rem; font-weight:700; color:var(--cat-c); letter-spacing:.03em; margin-bottom:3px;}
+  .task-due{font-family:var(--font-mono); font-size:.72rem; color:var(--ink-soft); margin-top:6px;}
+  .task-due .rel{font-weight:700; margin-left:6px;}
+  .rel.overdue{color:var(--danger);}
+  .rel.today{color:var(--today-c);}
+  .rel.soon{color:var(--accent);}
+  .rel.later{color:var(--ink-soft);}
+  .task-actions{display:flex; align-items:center; gap:6px; flex-shrink:0;}
+  .btn-complete{
+    background:var(--ink); color:#fff; border:none; border-radius:20px;
+    padding:7px 14px; font-size:.78rem; font-weight:700; cursor:pointer;
+    white-space:nowrap; transition:background .15s;
+  }
+  .btn-complete:hover{background:var(--accent);}
+  .btn-icon{
+    background:transparent; border:none; cursor:pointer; color:var(--ink-soft);
+    font-size:.95rem; padding:5px; border-radius:6px; line-height:1;
+  }
+  .btn-icon:hover{background:rgba(0,0,0,0.06); color:var(--ink);}
+  .task-card.done{opacity:.72;}
+  .task-card.done .task-name{text-decoration:line-through; text-decoration-color:var(--ink-soft);}
+
+  /* ---------- Quote box (dashboard) ---------- */
+  .quote-box{
+    margin-top:36px; background:#fffdf6; border:1px solid var(--line); border-radius:4px;
+    padding:20px 24px; max-width:440px; box-shadow:2px 4px 14px rgba(40,30,10,0.08);
+    position:relative; transform:rotate(-0.6deg); font-family:var(--font-display);
+  }
+  .quote-box::before{
+    content:''; position:absolute; top:-7px; left:26px; width:14px; height:14px;
+    background:var(--accent); border-radius:50%; box-shadow:0 2px 4px rgba(0,0,0,.25);
+  }
+  .quote-box .eyebrow{margin-bottom:6px;}
+  .quote-box p{margin:0; font-size:1.02rem; line-height:1.65; color:var(--ink);}
+
+  /* ---------- Category page sections ---------- */
+  .section-title{font-family:var(--font-display); font-weight:700; font-size:1.1rem; margin:34px 0 14px; display:flex; align-items:center; gap:8px;}
+  .section-title .cnt{font-family:var(--font-mono); font-size:.78rem; color:var(--ink-soft); font-weight:400;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:12px;}
+  details.done-wrap summary{cursor:pointer; font-family:var(--font-display); font-weight:700; font-size:1.05rem; margin:34px 0 14px; list-style:none; display:flex; align-items:center; gap:8px;}
+  details.done-wrap summary::-webkit-details-marker{display:none;}
+  details.done-wrap summary::before{content:'▸'; transition:transform .15s;}
+  details.done-wrap[open] summary::before{transform:rotate(90deg);}
+  details.done-wrap .cnt{font-family:var(--font-mono); font-size:.78rem; color:var(--ink-soft); font-weight:400;}
+
+  /* ---------- Category widgets ---------- */
+  .widget-row{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px;}
+  .widget-card{background:var(--paper-2); border:1px solid var(--line); border-radius:14px; padding:18px 20px; border-top:4px solid var(--w-c,var(--accent));}
+  .widget-title{font-family:var(--font-display); font-weight:700; font-size:.96rem; margin-bottom:10px; display:flex; align-items:center; gap:6px;}
+  .topic-list{margin:0; padding-left:1.15em; font-size:.86rem; line-height:1.9; color:var(--ink);}
+  .stat-card{display:flex; flex-direction:column; align-items:flex-start; justify-content:center;}
+  .stat-num{font-family:var(--font-mono); font-size:2.1rem; font-weight:700; color:var(--accent); line-height:1;}
+  .stat-label{font-size:.76rem; color:var(--ink-soft); margin:5px 0 10px;}
+  .mini-quote{font-family:var(--font-display); font-size:.88rem; line-height:1.6; color:var(--ink);}
+  .quote-card-mini p{font-family:var(--font-display); font-size:.92rem; line-height:1.7; margin:0;}
+  .note-card{background:#fffdf6; border:1px solid var(--line); border-radius:12px; padding:18px 20px; margin-bottom:22px; box-shadow:1px 3px 10px rgba(40,30,10,0.05);}
+  .note-card p{margin:8px 0 0; font-size:.9rem; line-height:1.75;}
+  .disclaimer{font-size:.7rem; color:var(--ink-soft); margin:-8px 0 22px;}
+  .game-list{display:flex; flex-direction:column; gap:12px;}
+  .game-item{border-bottom:1px dashed var(--line); padding-bottom:10px;}
+  .game-item:last-child{border-bottom:none; padding-bottom:0;}
+  .game-name{font-weight:700; font-size:.95rem;}
+  .game-meta{font-family:var(--font-mono); font-size:.72rem; color:var(--ink-soft); margin:3px 0;}
+  .game-desc{font-size:.84rem; color:var(--ink); line-height:1.6;}
+  .twitch-btn{display:inline-flex; align-items:center; gap:8px; background:#9146FF; color:#fff; border-radius:10px; padding:12px 20px; font-weight:700; font-size:.88rem; text-decoration:none; margin-bottom:26px;}
+  .twitch-btn:hover{background:#7c2fe0;}
+  .streak-actions{display:flex; gap:8px;}
+
+  /* ---------- FAB ---------- */
+  #fab{
+    position:fixed; right:34px; bottom:34px; z-index:40;
+    background:var(--accent); color:#fff; border:none; border-radius:30px;
+    padding:15px 22px; font-size:.95rem; font-weight:700; cursor:pointer;
+    box-shadow:0 6px 18px rgba(76,70,112,0.35); display:flex; align-items:center; gap:8px;
+    transition:transform .15s, box-shadow .15s;
+  }
+  #fab:hover{transform:translateY(-2px); box-shadow:0 10px 24px rgba(76,70,112,0.4);}
+
+  /* ---------- Modal (shared) ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(30,25,20,0.42); z-index:60;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .overlay.hidden{display:none;}
+  .modal{
+    background:var(--paper); border-radius:16px; padding:28px 26px 24px; width:100%; max-width:440px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.25); position:relative; max-height:88vh; overflow-y:auto;
+  }
+  .modal h2{font-family:var(--font-display); font-size:1.25rem; margin:0 0 18px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:.78rem; font-weight:700; color:var(--ink-soft); margin-bottom:7px; letter-spacing:.02em;}
+  .field input[type=text], .field input[type=date]{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;
+    background:#fff; font-family:var(--font-body); font-size:.92rem; color:var(--ink);
+  }
+  .field input:focus{outline:2px solid var(--accent-light); outline-offset:1px;}
+  .pill-group{display:flex; gap:8px; flex-wrap:wrap;}
+  .pill{
+    border:1px solid var(--line); background:#fff; border-radius:20px; padding:8px 14px;
+    font-size:.82rem; cursor:pointer; color:var(--ink-soft); display:flex; align-items:center; gap:6px;
+    transition:all .15s;
+  }
+  .pill.selected{border-color:var(--pill-c,var(--accent)); background:var(--pill-c,var(--accent)); color:#fff; font-weight:700;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:22px;}
+  .btn-secondary{background:transparent; border:1px solid var(--line); border-radius:8px; padding:10px 16px; font-size:.88rem; cursor:pointer; color:var(--ink-soft);}
+  .btn-primary{background:var(--accent); color:#fff; border:none; border-radius:8px; padding:10px 18px; font-size:.88rem; font-weight:700; cursor:pointer;}
+  .btn-primary:hover{background:#3d3860;}
+  .close-x{position:absolute; top:16px; right:16px; background:none; border:none; font-size:1.1rem; cursor:pointer; color:var(--ink-soft);}
+  .field-error{color:var(--danger); font-size:.76rem; margin-top:5px; display:none;}
+
+  /* ---------- Manage tabs modal ---------- */
+  .manage-row{display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);}
+  .manage-row .manage-dot{width:12px;height:12px;border-radius:50%; flex-shrink:0;}
+  .manage-row input[type=text]{flex:1; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:.86rem; background:#fff;}
+  .add-cat-block{margin-top:18px; padding-top:16px; border-top:1px dashed var(--line);}
+  .swatch-group{display:flex; gap:8px; margin:10px 0;}
+  .swatch{width:26px;height:26px;border-radius:50%; cursor:pointer; border:2px solid transparent; padding:0;}
+  .swatch.selected{border-color:var(--ink);}
+  .icon-input{width:56px !important; text-align:center;}
+  .inline-row{display:flex; gap:8px; align-items:center;}
+
+  /* ---------- Loading ---------- */
+  .loading{color:var(--ink-soft); font-size:.9rem; padding:60px 0; text-align:center;}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 780px){
+    body{flex-direction:column;}
+    #sidebar{
+      width:100%; height:auto; position:sticky; top:0; z-index:30;
+      padding:14px 0; flex-direction:row; align-items:center; overflow-x:auto;
+    }
+    .brand{padding:0 16px; font-size:1.05rem; white-space:nowrap;}
+    .brand small{display:none;}
+    .tabs{display:flex; margin-top:0;}
+    .tab{padding:10px 14px; border-left:none; border-bottom:3px solid transparent; white-space:nowrap;}
+    .tab.active{border-left:none; border-bottom-color:var(--tab-c,var(--accent));}
+    .tab .chip{display:none;}
+    .sidebar-foot{display:none;}
+    #content{padding:26px 18px 100px;}
+    .periods{grid-template-columns:1fr;}
+    .widget-row{grid-template-columns:1fr;}
+    h1.page-title{font-size:1.6rem;}
+    #fab{right:18px; bottom:18px; padding:13px 18px; font-size:.88rem;}
+  }
+</style>
+</head>
+<body>
+
+  <nav id="sidebar">
+    <div class="brand">企劃手帳<small>DAILY PROJECT PLANNER</small></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="sidebar-foot">
+      <button class="manage-btn" id="open-manage">✎ 管理分頁</button>
+      <p>資料儲存在你的 Claude 帳號中，登入同帳號即可跨裝置同步。</p>
+    </div>
+  </nav>
+
+  <main id="content"><div class="loading">載入中…</div></main>
+
+  <button id="fab">＋ 新增待辦</button>
+
+  <!-- Add / edit task modal -->
+  <div id="modal-overlay" class="overlay hidden">
+    <div class="modal">
+      <button class="close-x" id="modal-close">✕</button>
+      <h2 id="modal-title">新增待辦事項</h2>
+      <form id="task-form">
+        <div class="field">
+          <label>項目名稱</label>
+          <input type="text" id="f-name" placeholder="例如：沖繩景點推薦文初稿" maxlength="60" required>
+          <div class="field-error" id="err-name">請輸入項目名稱</div>
+        </div>
+        <div class="field">
+          <label>所屬類別</label>
+          <div class="pill-group" id="f-category"></div>
+        </div>
+        <div class="field">
+          <label>時段</label>
+          <div class="pill-group" id="f-period"></div>
+        </div>
+        <div class="field">
+          <label>截止日期</label>
+          <input type="date" id="f-due" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancel-btn">取消</button>
+          <button type="submit" class="btn-primary">儲存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manage tabs modal -->
+  <div id="manage-overlay" class="overlay hidden">
+    <div class="modal">
+      <button class="close-x" id="manage-close">✕</button>
+      <h2>管理分頁</h2>
+      <div id="manage-list"></div>
+      <div class="add-cat-block">
+        <div class="field" style="margin-bottom:10px;">
+          <label>新增分頁</label>
+          <div class="inline-row">
+            <input type="text" id="new-cat-icon" class="icon-input" maxlength="2" placeholder="📁">
+            <input type="text" id="new-cat-name" placeholder="分頁名稱" maxlength="16">
+          </div>
+        </div>
+        <div class="swatch-group" id="new-cat-swatches"></div>
+        <div class="modal-actions" style="margin-top:12px;">
+          <button type="button" class="btn-primary" id="add-cat-btn">＋ 新增分頁</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ Static content pools ============ */
+  const PERIODS = {
+    morning: {label:'早上', icon:'🌅', wash:'var(--morning-bg)'},
+    noon:    {label:'下午', icon:'☀️', wash:'var(--noon-bg)'},
+    evening: {label:'晚上', icon:'🌙', wash:'var(--evening-bg)'}
+  };
+
+  const PRESET_COLORS = ['#4C4670','#2E7480','#C1707B','#7C8F4E','#C98A2E','#6B7BB0'];
+
+  const QUOTES = [
+    "今天的份，今天完成就好，別急著跟明天比。","先開始，再完美。動手之後，方向自然會清楚。",
+    "你只需要比昨天，多前進一點點。","休息不是偷懶，是讓下一步走得更穩。",
+    "把大目標拆成小方塊，一格一格吃掉它。","完成比完美更重要，先交出第一版。",
+    "小小的今天，累積成很大的以後。","不用同時做完所有事，先做眼前這一件。",
+    "靈感不會等你準備好，先寫下來再說。","今天推進一點，就是對未來的自己好一點。",
+    "專注眼前這一格，其他的先放著也沒關係。","你已經做得比想像中多了，繼續就好。",
+    "慢慢來，但不要停下來。","做完一件事，比想十件事更有用。",
+    "今天的待辦，是明天回頭看會感謝的自己。","先求有，再求好；先交卷，再修稿。",
+    "把心裡的雜訊關掉，先做手上這一件。","每一格打勾，都是今天的一個小勝利。",
+    "不需要衝刺，只需要不放棄。","今天也辛苦了，記得留一點時間給自己。"
+  ];
+
+  const TRAVEL_QUOTES = [
+    "每一篇遊記，都是幫讀者先探路一次。","還沒出發也沒關係，先把想去的地方寫下來。",
+    "你的文字，可能就是某個人旅行的起點。","慢慢寫，好內容不怕晚一點發布。",
+    "今天先把大綱列出來，細節之後再補。","旅遊的美好，值得被好好記錄下來。",
+    "先寫一段就好，靈感會在動筆後才出現。","你踩過的雷，正是讀者最需要的提醒。",
+    "資料查得再累，讀者看到都會覺得值得。","今天完成的這篇，會有人因此少走冤枉路。"
+  ];
+  const MED_QUOTES = [
+    "把專業知識寫得好懂，是很了不起的事。","今天寫的內容，可能正好解答某人的疑惑。",
+    "資訊查證再仔細一點，讀者會更放心。","先寫初稿，用字精準的部分之後再修。",
+    "把複雜的醫美知識，變簡單也是一種專業。","今天推進一點點，離完稿又更近了。",
+    "讀者的信任，來自每一篇用心查證的內容。","先求正確，再求好讀，順序別搞反了。",
+    "你正在幫助別人做出更安心的決定。","寫完這篇，你又完成了一件重要的事。"
+  ];
+  const YOGA_QUOTES = [
+    "有練習，就有進步，不用跟別人比。","今天的墊子時間，是留給自己的禮物。",
+    "呼吸穩定了，心也會跟著慢下來。","不必每次都完美，願意開始就很好。",
+    "身體的柔軟，是日積月累的溫柔堅持。","休息也是練習的一部分，別忘了善待自己。",
+    "每一次呼吸，都是重新回到當下的機會。","持續，比強度更重要。",
+    "今天的練習，會成為明天更穩定的自己。","墊子攤開的那一刻，就已經是成功的開始。"
+  ];
+
+  const CULTURE_STORIES = [
+    "日本京都的伏見稻荷大社，以綿延數公里的上千座朱紅色鳥居聞名，據信興建於西元8世紀，是全日本祈求生意興隆的信仰中心。",
+    "秘魯的馬丘比丘建於15世紀印加帝國全盛時期，直到1911年才被外界重新發現，如今仍有許多建造工法成謎。",
+    "摩洛哥的舍夫沙萬小鎮以滿城藍色牆面著稱，一種說法是當地猶太移民社群在1930年代將此色彩帶入此地。",
+    "芬蘭人一年平均咖啡消耗量位居全球前段班，咖啡文化與「Kahvitauko」（咖啡休息時間）已深植日常生活。",
+    "印度的泰姬瑪哈陵由蒙兀兒帝國皇帝沙賈汗於17世紀為愛妻興建，耗時約22年才完工。",
+    "冰島幾乎沒有蚊子，是全球少數幾個未有蚊蟲族群穩定生存的地區之一，與當地特殊氣候變化型態有關。",
+    "義大利威尼斯建立在超過100座小島之上，靠著數百座橋樑與運河串連整座城市，至今仍以船隻為主要交通工具。",
+    "紐西蘭毛利文化中的「哈卡」（Haka）原是戰舞，如今常見於迎賓儀式與體育賽事開場，象徵力量與團結。",
+    "埃及吉薩金字塔群建於約4500年前，是古代世界七大奇蹟中唯一保存至今的建築。",
+    "土耳其卡帕多奇亞的地下城市歷史悠久，古代居民曾利用這些地道躲避外敵入侵。",
+    "挪威人的「Friluftsliv」（戶外生活）文化強調親近自然，被視為當地生活方式與國民健康的重要基礎。",
+    "泰國潑水節（宋干節）原意是以水洗淨過去一年的晦氣，象徵新年的祝福與重生。",
+    "法國普羅旺斯的薰衣草田大約在每年6月下旬到8月盛開，此傳統栽培已有數百年歷史。",
+    "墨西哥亡靈節並非哀傷的節日，而是家族團聚、以鮮花與祭壇迎接逝去親人「回家」的慶典。",
+    "澳洲原住民的岩石壁畫部分可追溯至數萬年前，是全球現存最古老的藝術傳統之一。",
+    "希臘聖托里尼島上的白牆藍頂建築，其實是19世紀後為反射陽光、節省建材而逐漸發展出的風格。",
+    "不丹是全球少數以「國民幸福總值」取代GDP作為施政指標的國家。",
+    "韓國的溫突（온돌）地暖系統歷史悠久，是傳統韓屋冬季保暖的智慧結晶。",
+    "越南下龍灣的石灰岩島群，在當地傳說中是巨龍降落海面守護海岸而形成。",
+    "智利復活節島的摩艾石像共有近千尊，多數由拉帕努伊人在西元13至16世紀間雕刻完成。"
+  ];
+
+  const MED_KNOWLEDGE = [
+    "SPF數值代表防曬產品對UVB的防護效果，但無論數值高低，都建議每2至3小時補擦才有效。",
+    "玻尿酸廣泛存在於人體真皮層，具有極佳保水能力，也是醫美填充材料中常見的成分之一。",
+    "肉毒桿菌素常用於改善動態紋（如抬頭紋、魚尾紋），效果通常持續數個月，實際時間因人而異。",
+    "「果酸換膚」利用果酸促進角質代謝，術後皮膚可能暫時較敏感，防曬與保濕格外重要。",
+    "膠原蛋白會隨年齡增長逐漸流失，通常從25歲左右開始，流失速度因人而異。",
+    "醫美術後的紅腫熱痛屬於常見反應，但若合併發燒或化膿，應盡快回診評估。",
+    "雷射光療的波長會針對不同膚況設計，例如色素、血管或毛孔問題適用的機型並不相同。",
+    "「界面活性劑」是清潔產品中負責帶走油脂與髒污的成分，濃度與種類會影響肌膚耐受度。",
+    "皮膚屏障受損時容易出現乾癢緊繃，簡化保養步驟、加強保濕是常見的修復方向。",
+    "「A醇」（視黃醇）具有促進代謝的效果，初期使用建議由低濃度、低頻率開始建立耐受度。",
+    "醫美療程前後通常會建議避免高溫、日曬與刺激性保養品，降低肌膚負擔。",
+    "不同填充劑的作用機轉並不相同，效果維持時間也有差異，適合的療程需依個人狀況評估。",
+    "痘疤依型態可分為凹疤、色素疤等，處理方式也不盡相同，通常需要專業評估才能對症。",
+    "防曬產品的「物理性」與「化學性」差異在於防曬機轉，前者以反射為主，後者以吸收轉化紫外線為主。",
+    "「經皮水分散失（TEWL）」是評估肌膚屏障健康度的重要指標之一，數值越低代表保濕能力越好。",
+    "換季時肌膚容易出現敏感反應，減少保養品種類、觀察肌膚回饋是常見的因應方式。",
+    "選擇醫美診所前，了解療程原理、恢復期與可能風險，是諮詢時值得詢問的重點。",
+    "「微整形」泛指非手術性的醫美療程，實際效果與風險仍因療程種類而異，建議諮詢專業醫師。",
+    "皮膚老化可分為「內因性老化」與「光老化」，後者與長期紫外線曝曬有密切關係。",
+    "術後照護中的「保濕」與「防曬」，是多數醫美療程恢復期共同強調的兩大重點。"
+  ];
+
+  const YOGA_KNOWLEDGE = [
+    "瑜伽（Yoga）一詞源自梵文字根「yuj」，意指「連結」，最初意涵是身心與更高意識的合一。",
+    "帕坦伽利《瑜伽經》被視為古典瑜伽哲學的重要文獻，提出著名的「八肢瑜伽」修行架構，涵蓋持戒、精進、體位法、調息到禪定。",
+    "「體位法」（Asana）在古典文獻中原本泛指靜坐的穩定姿勢，直到近代才發展出我們熟悉的多樣體位練習。",
+    "「調息法」（Pranayama）強調透過呼吸的控制與觀察，作為連結身體與心念的橋樑。",
+    "「Namaste」是印度傳統問候語，字面意涵接近「我向你內在的光敬禮」，常用於練習開始與結束時互相致意。",
+    "哈達瑜伽（Hatha Yoga）一詞中的「Ha」與「Tha」分別象徵陽與陰、太陽與月亮，意指透過練習達到身心平衡。",
+    "「脈輪」（Chakra）概念源自古印度哲學，用以描述人體能量流動的七個主要中心點。",
+    "「Ahimsa」（不傷害）是瑜伽八肢中「持戒」的第一項原則，被視為所有練習的核心精神之一。",
+    "現代常見的「陰瑜伽」強調長時間停留、放鬆結締組織，與強調動態串連的「流瑜伽」形成對比的練習取向。",
+    "「Om」被視為宇宙原初的聲音，在許多瑜伽與冥想傳統中，常作為練習開始前的唱誦。",
+    "「Savasana」（大休息式）雖然看似只是躺著休息，卻常被視為整堂練習中最重要也最具挑戰性的一式。",
+    "「Drishti」意指練習體位法時凝視的焦點，有助於穩定注意力、減少身體的搖晃。",
+    "「Bhakti Yoga」（奉愛瑜伽）是印度傳統瑜伽路徑之一，強調透過虔誠與愛的情感連結修行。",
+    "「Karma Yoga」（行動瑜伽）主張透過無私的行動與服務作為修行的方式，是廣為人知的瑜伽哲學路徑之一。",
+    "瑜伽練習中的「Ujjayi」呼吸法，透過輕微收縮喉嚨產生海浪般的呼吸聲，有助於穩定專注力。",
+    "「Mudra」（手印）是瑜伽與冥想中常見的手勢語言，被認為能引導體內能量的流動方向。",
+    "20世紀瑜伽宗師克里希那馬查亞（Krishnamacharya）被許多人視為現代瑜伽發展的重要奠基者之一，多位知名瑜伽老師皆出自其門下。",
+    "「Vinyasa」意指「以特定順序串連」，是流瑜伽中呼吸與動作同步移動的核心概念。",
+    "「Yoga Nidra」（瑜伽睡眠）是一種深層放鬆的引導練習，過程中練習者維持在清醒與睡眠之間的意識狀態。",
+    "「Santosha」（知足）是瑜伽哲學中的一項內在原則，鼓勵練習者對當下的狀態抱持接納與感恩。"
+  ];
+
+  const TRAVEL_SEO_WEEKS = [
+    ["東京近郊一日遊：不塞車的私房景點清單","背包客東南亞省錢攻略：交通住宿花費全公開","秋天賞楓景點推薦：日本韓國怎麼選"],
+    ["歐洲火車通行證比較：Eurail vs 各國國鐵通票","海島蜜月首選：五個浪漫沙灘目的地","自由行vs跟團：適合哪種旅遊型態的判斷指南"],
+    ["城市漫遊路線規劃：如何用半天走完老城區精華","露營新手裝備清單：第一次露營該準備什麼","機票比價實測：哪個平台真的能省到錢"],
+    ["親子旅遊景點推薦：帶小孩出國的行前準備","數位遊牧城市盤點：適合遠端工作的生活成本比較","行李打包清單：長途旅行必備物品整理"],
+    ["小眾祕境介紹：還沒被觀光客攻陷的旅遊地","美食旅遊路線：跟著在地人吃街邊小吃","四季旅遊穿搭建議：行李箱空間怎麼分配"],
+    ["自駕遊路線規劃：租車保險與注意事項全解析","文化衝擊經驗分享：初次到訪陌生國度的觀察","住宿類型比較：青旅、民宿、飯店怎麼選才划算"],
+    ["節慶旅遊時機：跟著在地節日規劃行程","登山健行入門：新手適合的步道推薦","旅遊保險怎麼買：保障範圍與理賠眉角"],
+    ["城市轉機攻略：善用長轉機時間市區觀光","極簡旅行實驗：只帶隨身背包出國一週","旅遊攝影技巧：手機也能拍出雜誌感照片"]
+  ];
+  const MED_SEO_WEEKS = [
+    ["夏季曬後修復完整攻略：從急救到日常保養","肉毒桿菌術前術後常見QA整理","敏弱肌保養品挑選重點：成分表怎麼看"],
+    ["玻尿酸填充效果維持多久：影響因素解析","痘疤處理方式比較：雷射、換膚怎麼選","保濕與抗老成分入門：新手保養攻略"],
+    ["換季肌膚問題全解析：從乾癢到泛紅怎麼辦","微整形恢復期照護指南：術後幾天能上妝","防曬產品挑選指南：物理性vs化學性比一比"],
+    ["熟齡肌保養重點整理：從清潔到抗老的順序","醫美診所諮詢前該準備的問題清單","毛孔粗大改善方式：日常保養與療程比較"],
+    ["A醇入門指南：新手該怎麼開始建立耐受度","術後保養品挑選：修復肌膚屏障的成分推薦","黑眼圈成因與改善方式全解析"],
+    ["醫美術語小百科：常見專有名詞一次搞懂","油痘肌保養攻略：清爽不致痘的保養順序","膠原蛋白流失與保養：從飲食到保養品怎麼補"],
+    ["淡斑療程比較：雷射、美白保養怎麼搭配","男性醫美保養趨勢：從清潔到抗老需求分析","術後防曬全攻略：修復期的日常防護重點"],
+    ["肌膚屏障修復指南：從症狀判斷保養方向","醫美術後常見迷思破解：哪些說法其實不正確","抗老保養成分比較：多胜肽、A醇、維他命C怎麼選"]
+  ];
+
+  // 遊戲上市資訊整理自 2026/07 公開新聞與官方發售情報（日期若有變動請以官方公告為準）
+  const GAMES_WEEKS = [
+    [
+      {name:'Star Fox（N64重製版）', platform:'Switch2', date:'2026/06/25', desc:'經典太空戰鬥遊戲重製登陸Switch2，重溫箭頭隊的空戰操作。'},
+      {name:'Rhythm Heaven Groove', platform:'Switch2', date:'2026/07/02', desc:'任天堂新作音樂節奏遊戲，加入RPG戰鬥模式與多人共玩。'},
+      {name:'職棒野球魂 2026', platform:'PS5／Steam', date:'2026/07/16', desc:'KONAMI年度擬真棒球遊戲最新作，PS5與Steam同步推出。'}
+    ],
+    [
+      {name:'ZeroSpace 零度空間', platform:'Steam', date:'2026/07/20', desc:'太空題材即時戰略遊戲，結合城市建造與戰爭策略元素。'},
+      {name:'Splatoon Raiders', platform:'Switch2', date:'2026/07/23', desc:'漆彈系列首款單人主導新作，主打武器道具解謎與戰鬥。'},
+      {name:'異度神劍 X（Switch2強化版）', platform:'Switch2', date:'2026/07/30', desc:'經典科幻RPG強化重製，畫面與效能全面升級。'}
+    ],
+    [
+      {name:'Big Walk', platform:'Switch2', date:'2026/08/04', desc:'無名鵝愛搗蛋團隊新作，強調距離語音互動的多人合作遊戲。'},
+      {name:'MARVEL: Tōkon Fighting Souls', platform:'PS5／PC', date:'2026/08/06', desc:'漫威宇宙改編對戰格鬥遊戲，PS5與PC同步上市。'},
+      {name:'鬼武者 Way of the Sword', platform:'PS5／Xbox／Steam', date:'2026/09/04', desc:'CAPCOM經典劍鬥動作系列回歸，發售日提前登場。'}
+    ],
+    [
+      {name:'三國志14 威力加強傳承版', platform:'PC', date:'2026/09/10', desc:'經典策略模擬系列傳承版本，PC平台推出。'},
+      {name:'Fire Emblem: Fortune\u2019s Weave', platform:'Switch2', date:'2026/09/17', desc:'戰棋角色扮演新作，去年公布後終於確定發售。'},
+      {name:'啦嗒噹 Ratatan', platform:'Switch2／PS5／Xbox', date:'2026/10/15', desc:'節奏Roguelike動作遊戲，數位與實體版同步上市。'}
+    ],
+    [
+      {name:'Switch Sports Resort', platform:'Switch2', date:'2026/10/22', desc:'任天堂運動合輯新作，新增手指摔角等體感玩法。'},
+      {name:'俠盜獵車手6（GTA VI）', platform:'PS5／Xbox', date:'2026/11', desc:'Rockstar超大型開放世界犯罪動作新作，萬眾矚目。'},
+      {name:'異度神劍3（Switch2強化版）', platform:'Switch2', date:'2026/12/03', desc:'科幻RPG三部曲最終章強化重製版。'}
+    ]
+  ];
+
+  /* ============ Storage ============ */
+  async function loadJSON(key, seedFn){
+    try{
+      const res = await window.storage.get(key, false);
+      return res && res.value ? JSON.parse(res.value) : (seedFn ? seedFn() : null);
+    }catch(e){
+      const seed = seedFn ? seedFn() : null;
+      if(seed !== null) await saveJSON(key, seed);
+      return seed;
+    }
+  }
+  async function saveJSON(key, value){
+    try{ await window.storage.set(key, JSON.stringify(value), false); }
+    catch(e){ console.error('儲存失敗', key, e); }
+  }
+  function addDays(n){ const d = new Date(); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  function defaultCategories(){
+    return [
+      {key:'travel', label:'旅遊文章', icon:'✈️', color:'#2E7480', type:'travel'},
+      {key:'medaesthetic', label:'醫美文章', icon:'💉', color:'#C1707B', type:'medaesthetic'},
+      {key:'yoga', label:'瑜伽', icon:'🧘', color:'#7C8F4E', type:'yoga'},
+      {key:'live', label:'直播', icon:'🎥', color:'#C98A2E', type:'live'}
+    ];
+  }
+  function demoTasks(){
+    return [
+      {id:uid(), name:'沖繩景點推薦文初稿', category:'travel', period:'morning', dueDate:addDays(2), completed:false, createdAt:Date.now()},
+      {id:uid(), name:'玻尿酸術後衛教文案', category:'medaesthetic', period:'noon', dueDate:addDays(1), completed:false, createdAt:Date.now()},
+      {id:uid(), name:'錄製晨間瑜伽教學片段', category:'yoga', period:'morning', dueDate:addDays(0), completed:false, createdAt:Date.now()},
+      {id:uid(), name:'週五直播腳本整理', category:'live', period:'evening', dueDate:addDays(3), completed:false, createdAt:Date.now()}
+    ];
+  }
+
+  /* ============ State ============ */
+  let TASKS = [];
+  let CATEGORIES = [];
+  let YOGA_STREAK = {count:0};
+  let currentView = (location.hash || '#dashboard').replace('#','');
+  let modalCategoryLock = null;
+  let selectedSwatch = PRESET_COLORS[0];
+
+  function getCategory(key){ return CATEGORIES.find(c=>c.key===key); }
+  function colorOf(key){ const c = getCategory(key); return c ? c.color : '#4C4670'; }
+
+  /* ============ Date helpers ============ */
+  function daysUntil(dateStr){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const due = new Date(dateStr + 'T00:00:00');
+    return Math.round((due - today) / 86400000);
+  }
+  function formatDue(dateStr){
+    const d = daysUntil(dateStr);
+    const dt = new Date(dateStr + 'T00:00:00');
+    const md = (dt.getMonth()+1) + '/' + dt.getDate();
+    const week = ['日','一','二','三','四','五','六'][dt.getDay()];
+    let rel, cls;
+    if(d < 0){ rel = '已逾期 ' + (-d) + ' 天'; cls = 'overdue'; }
+    else if(d === 0){ rel = '今天截止'; cls = 'today'; }
+    else if(d === 1){ rel = '明天截止'; cls = 'soon'; }
+    else if(d <= 3){ rel = '還有 ' + d + ' 天'; cls = 'soon'; }
+    else { rel = '還有 ' + d + ' 天'; cls = 'later'; }
+    return { text: md + '（週' + week + '）', rel, cls, days:d };
+  }
+  function todayLabel(){
+    const dt = new Date();
+    const week = ['日','一','二','三','四','五','六'][dt.getDay()];
+    return (dt.getMonth()+1) + '月' + dt.getDate() + '日 星期' + week;
+  }
+  function dayOfYear(d){ const start = new Date(d.getFullYear(),0,0); return Math.floor((d - start) / 86400000); }
+  function weekIndex(d){ return Math.floor(dayOfYear(d)/7); }
+  function todaysQuote(){ return QUOTES[dayOfYear(new Date()) % QUOTES.length]; }
+  function pickDaily(pool){ return pool[dayOfYear(new Date()) % pool.length]; }
+  function pickWeekly(pool){ return pool[weekIndex(new Date()) % pool.length]; }
+
+  /* ============ Task ops ============ */
+  async function completeTask(id){
+    const t = TASKS.find(x=>x.id===id);
+    if(!t) return;
+    t.completed = true; t.completedAt = Date.now();
+    await saveJSON('tasks', TASKS);
+    render();
+  }
+  async function restoreTask(id){
+    const t = TASKS.find(x=>x.id===id);
+    if(!t) return;
+    t.completed = false; t.completedAt = null;
+    await saveJSON('tasks', TASKS);
+    render();
+  }
+  async function deleteTask(id){
+    if(!confirm('確定要刪除這個項目嗎？此動作無法復原。')) return;
+    TASKS = TASKS.filter(x=>x.id!==id);
+    await saveJSON('tasks', TASKS);
+    render();
+  }
+  async function addTask(data){
+    TASKS.push({ id:uid(), name:data.name, category:data.category, period:data.period, dueDate:data.dueDate, completed:false, createdAt:Date.now() });
+    await saveJSON('tasks', TASKS);
+    render();
+  }
+  function animateAndComplete(id, btn){
+    const card = btn.closest('.task-card');
+    if(card){ card.classList.add('removing'); setTimeout(()=>completeTask(id), 320); }
+    else completeTask(id);
+  }
+
+  /* ============ Category ops ============ */
+  async function renameCategory(key, newLabel){
+    const cat = getCategory(key);
+    if(!cat || !newLabel.trim()) return;
+    cat.label = newLabel.trim();
+    await saveJSON('categories', CATEGORIES);
+    render();
+  }
+  async function deleteCategory(key){
+    const cat = getCategory(key);
+    if(!cat) return;
+    const count = TASKS.filter(t=>t.category===key).length;
+    const msg = count > 0
+      ? `確定要刪除「${cat.label}」分頁嗎？裡面的 ${count} 筆待辦事項也會一併刪除，此動作無法復原。`
+      : `確定要刪除「${cat.label}」分頁嗎？此動作無法復原。`;
+    if(!confirm(msg)) return;
+    CATEGORIES = CATEGORIES.filter(c=>c.key!==key);
+    TASKS = TASKS.filter(t=>t.category!==key);
+    await saveJSON('categories', CATEGORIES);
+    await saveJSON('tasks', TASKS);
+    if(currentView===key) location.hash = 'dashboard';
+    renderManageList();
+    render();
+  }
+  async function addCategory(label, icon, color){
+    if(!label.trim()) return;
+    const key = 'custom_' + uid();
+    CATEGORIES.push({key, label:label.trim(), icon: icon.trim() || '📁', color, type:'custom'});
+    await saveJSON('categories', CATEGORIES);
+    renderManageList();
+    render();
+  }
+  async function addStreak(delta){
+    if(delta > 0) YOGA_STREAK.count += 1;
+    else YOGA_STREAK.count = 0;
+    await saveJSON('yogaStreak', YOGA_STREAK);
+    render();
+  }
+
+  /* ============ Card renderer ============ */
+  function taskCardHTML(t, opts){
+    opts = opts || {};
+    const cat = getCategory(t.category);
+    const due = formatDue(t.dueDate);
+    const showCat = opts.showCat !== false && cat;
+    const done = t.completed;
+    return `
+      <div class="task-card${done?' done':''}" style="--cat-c:${colorOf(t.category)}" data-id="${t.id}">
+        <div class="task-top">
+          <div>
+            ${showCat ? `<div class="task-cat" style="color:${colorOf(t.category)}">${cat.icon} ${escapeHTML(cat.label)}</div>` : ''}
+            <div class="task-name">${escapeHTML(t.name)}</div>
+            <div class="task-due">${due.text}<span class="rel ${due.cls}">${due.rel}</span></div>
+          </div>
+          <div class="task-actions">
+            ${done
+              ? `<button class="btn-icon" data-action="restore" title="恢復為待完成">↺</button>`
+              : `<button class="btn-complete" data-action="complete">完成</button>`}
+            <button class="btn-icon" data-action="delete" title="刪除">🗑</button>
+          </div>
+        </div>
+      </div>`;
+  }
+  function escapeHTML(s){
+    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  /* ============ Widget blocks ============ */
+  function seoTopicsBlock(weeksPool, color){
+    const topics = pickWeekly(weeksPool);
+    return `<div class="widget-card" style="--w-c:${color}">
+      <div class="widget-title">💡 本週SEO主題三選</div>
+      <ul class="topic-list">${topics.map(t=>`<li>${escapeHTML(t)}</li>`).join('')}</ul>
+    </div>`;
+  }
+  function statQuoteBlock(count, quotePool, label, color){
+    const q = pickDaily(quotePool);
+    return `<div class="widget-card stat-card" style="--w-c:${color}">
+      <div class="stat-num">${count}</div>
+      <div class="stat-label">${label}</div>
+      <div class="mini-quote">${escapeHTML(q)}</div>
+    </div>`;
+  }
+  function quoteMiniBlock(quotePool, title, color){
+    const q = pickDaily(quotePool);
+    return `<div class="widget-card quote-card-mini" style="--w-c:${color}">
+      <div class="widget-title">${title}</div><p>${escapeHTML(q)}</p>
+    </div>`;
+  }
+  function dailyNoteBlock(title, pool, icon){
+    const item = pickDaily(pool);
+    return `<div class="note-card"><div class="eyebrow">${icon} ${title}</div><p>${escapeHTML(item)}</p></div>`;
+  }
+  function gamesBlock(){
+    const games = pickWeekly(GAMES_WEEKS);
+    return `<div class="widget-card">
+      <div class="widget-title">🎮 本週遊戲上市情報</div>
+      <div class="game-list">${games.map(g=>`
+        <div class="game-item">
+          <div class="game-name">${escapeHTML(g.name)}</div>
+          <div class="game-meta">${escapeHTML(g.platform)} ・ ${escapeHTML(g.date)}</div>
+          <div class="game-desc">${escapeHTML(g.desc)}</div>
+        </div>`).join('')}</div>
+    </div>`;
+  }
+  function twitchBlock(){
+    return `<a class="twitch-btn" href="https://www.twitch.tv/seven_neko" target="_blank" rel="noopener noreferrer">🟣 前往 Twitch 直播間</a>`;
+  }
+  function streakBlock(color){
+    return `<div class="widget-card stat-card" style="--w-c:${color}">
+      <div class="stat-num">${YOGA_STREAK.count}</div>
+      <div class="stat-label">已持續練習天數</div>
+      <div class="streak-actions">
+        <button class="btn-complete" id="streak-add">+1 天</button>
+        <button class="btn-secondary" id="streak-reset">歸零</button>
+      </div>
+    </div>`;
+  }
+
+  /* ============ Dashboard ============ */
+  function renderDashboard(){
+    const pending = TASKS.filter(t=>!t.completed).sort((a,b)=>daysUntil(a.dueDate)-daysUntil(b.dueDate));
+    const urgent = pending.slice(0,3);
+
+    let html = `
+      <div class="page-head">
+        <div class="eyebrow">${todayLabel()}</div>
+        <h1 class="page-title">今天，要往前推進的事</h1>
+      </div>
+      <div class="urgent-wrap">
+        <div class="urgent-title">🔥 最緊急待辦</div>
+        ${urgent.length ? `<div class="urgent-row">${urgent.map(t=>{
+          const cat = getCategory(t.category); const due = formatDue(t.dueDate);
+          return `<div class="urgent-card" style="--cat-c:${colorOf(t.category)}">
+            <div class="cat-tag">${cat?cat.icon:''} ${cat?escapeHTML(cat.label):''}</div>
+            <div class="name">${escapeHTML(t.name)}</div>
+            <div class="task-due">${due.text}<span class="rel ${due.cls}">${due.rel}</span></div>
+          </div>`;
+        }).join('')}</div>` : `<div class="empty-note">目前沒有待完成事項，太厲害了 👏 按右下角「＋新增待辦」開始安排吧。</div>`}
+      </div>
+      <div class="periods">`;
+
+    Object.keys(PERIODS).forEach(pk=>{
+      const p = PERIODS[pk];
+      const items = pending.filter(t=>t.period===pk);
+      html += `
+        <div class="period-col" style="--wash:${p.wash}">
+          <div class="period-head">${p.icon} ${p.label}<span class="cnt">${items.length}</span></div>
+          ${items.length ? items.map(t=>taskCardHTML(t)).join('') : `<div class="period-empty">這個時段還沒有待辦事項。</div>`}
+        </div>`;
+    });
+
+    html += `</div>
+      <div class="quote-box">
+        <div class="eyebrow">今日一句</div>
+        <p>${todaysQuote()}</p>
+      </div>`;
+
+    document.getElementById('content').innerHTML = html;
+  }
+
+  /* ============ Category page ============ */
+  function renderCategory(catKey){
+    const cat = getCategory(catKey);
+    if(!cat){ location.hash = 'dashboard'; return; }
+    const all = TASKS.filter(t=>t.category===catKey);
+    const pending = all.filter(t=>!t.completed).sort((a,b)=>daysUntil(a.dueDate)-daysUntil(b.dueDate));
+    const done = all.filter(t=>t.completed).sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
+
+    let widgets = '';
+    if(cat.type === 'travel'){
+      widgets = `<div class="widget-row">${seoTopicsBlock(TRAVEL_SEO_WEEKS, cat.color)}${statQuoteBlock(done.length, TRAVEL_QUOTES, '已完成文章數', cat.color)}</div>${dailyNoteBlock('世界文化與歷史小故事', CULTURE_STORIES, '🌍')}`;
+    } else if(cat.type === 'medaesthetic'){
+      widgets = `<div class="widget-row">${seoTopicsBlock(MED_SEO_WEEKS, cat.color)}${statQuoteBlock(done.length, MED_QUOTES, '已完成文章數', cat.color)}</div>${dailyNoteBlock('醫美知識小教室', MED_KNOWLEDGE, '💡')}<p class="disclaimer">以上內容僅供內容發想參考，非醫療建議。</p>`;
+    } else if(cat.type === 'yoga'){
+      widgets = `<div class="widget-row">${streakBlock(cat.color)}${quoteMiniBlock(YOGA_QUOTES, '🧘 今日鼓勵', cat.color)}</div>${dailyNoteBlock('瑜伽知識／經典導讀', YOGA_KNOWLEDGE, '📖')}`;
+    } else if(cat.type === 'live'){
+      widgets = `${gamesBlock()}${twitchBlock()}`;
+    }
+
+    let html = `
+      <div class="page-head">
+        <div class="eyebrow">專案分類</div>
+        <h1 class="page-title">${cat.icon} ${escapeHTML(cat.label)}</h1>
+        <div class="cat-band" style="--band-c:${cat.color}"></div>
+      </div>
+      ${widgets}
+      <div class="section-title">待完成<span class="cnt">（${pending.length}）</span></div>
+      ${pending.length ? `<div class="grid">${pending.map(t=>taskCardHTML(t,{showCat:false})).join('')}</div>` : `<div class="empty-note">這個類別目前沒有待完成的專案。</div>`}
+      <details class="done-wrap">
+        <summary>已完成<span class="cnt">（${done.length}）</span></summary>
+        ${done.length ? `<div class="grid">${done.map(t=>taskCardHTML(t,{showCat:false})).join('')}</div>` : `<div class="empty-note">還沒有完成的專案紀錄。</div>`}
+      </details>`;
+
+    document.getElementById('content').innerHTML = html;
+  }
+
+  /* ============ Nav / Tabs ============ */
+  function renderTabs(){
+    const items = [{key:'dashboard', label:'儀表板', icon:'🗓️', color:'#4C4670'}]
+      .concat(CATEGORIES.map(c=>({key:c.key, label:c.label, icon:c.icon, color:c.color})));
+    document.getElementById('tabs').innerHTML = items.map(n=>`
+      <div class="tab${currentView===n.key?' active':''}" style="--tab-c:${n.color}" data-nav="${n.key}">
+        <span class="ico">${n.icon}</span><span class="label">${escapeHTML(n.label)}</span>
+        <span class="chip"></span>
+      </div>`).join('');
+  }
+
+  /* ============ Master render ============ */
+  function render(){
+    renderTabs();
+    if(currentView === 'dashboard') renderDashboard();
+    else if(getCategory(currentView)) renderCategory(currentView);
+    else renderDashboard();
+    bindCardEvents();
+    bindWidgetEvents();
+  }
+  function bindCardEvents(){
+    document.querySelectorAll('.task-card').forEach(card=>{
+      const id = card.dataset.id;
+      card.querySelectorAll('[data-action]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const action = btn.dataset.action;
+          if(action==='complete') animateAndComplete(id, btn);
+          else if(action==='restore') restoreTask(id);
+          else if(action==='delete') deleteTask(id);
+        });
+      });
+    });
+  }
+  function bindWidgetEvents(){
+    const addBtn = document.getElementById('streak-add');
+    const resetBtn = document.getElementById('streak-reset');
+    if(addBtn) addBtn.addEventListener('click', ()=>addStreak(1));
+    if(resetBtn) resetBtn.addEventListener('click', ()=>{ if(confirm('確定要將連續天數歸零嗎？')) addStreak(0); });
+  }
+
+  /* ============ Nav events ============ */
+  document.getElementById('tabs').addEventListener('click', (e)=>{
+    const tab = e.target.closest('.tab');
+    if(!tab) return;
+    location.hash = tab.dataset.nav;
+  });
+  window.addEventListener('hashchange', ()=>{
+    currentView = location.hash.replace('#','') || 'dashboard';
+    render();
+  });
+
+  /* ============ Add-task modal ============ */
+  const overlay = document.getElementById('modal-overlay');
+  const form = document.getElementById('task-form');
+  const catField = document.getElementById('f-category');
+  const perField = document.getElementById('f-period');
+  let selectedCategory = null, selectedPeriod = null;
+
+  function buildPillGroups(){
+    catField.innerHTML = CATEGORIES.map(c=>`<div class="pill" data-cat="${c.key}" style="--pill-c:${c.color}">${c.icon} ${escapeHTML(c.label)}</div>`).join('');
+    perField.innerHTML = Object.keys(PERIODS).map(k=>{
+      const p = PERIODS[k];
+      return `<div class="pill" data-per="${k}" style="--pill-c:var(--accent)">${p.icon} ${p.label}</div>`;
+    }).join('');
+    catField.querySelectorAll('.pill').forEach(p=>{
+      p.addEventListener('click', ()=>{
+        if(modalCategoryLock) return;
+        selectedCategory = p.dataset.cat;
+        catField.querySelectorAll('.pill').forEach(x=>x.classList.remove('selected'));
+        p.classList.add('selected');
+      });
+    });
+    perField.querySelectorAll('.pill').forEach(p=>{
+      p.addEventListener('click', ()=>{
+        selectedPeriod = p.dataset.per;
+        perField.querySelectorAll('.pill').forEach(x=>x.classList.remove('selected'));
+        p.classList.add('selected');
+      });
+    });
+  }
+
+  function openModal(){
+    form.reset();
+    document.getElementById('err-name').style.display='none';
+    buildPillGroups();
+    selectedCategory = getCategory(currentView) ? currentView : (CATEGORIES[0] ? CATEGORIES[0].key : null);
+    selectedPeriod = null;
+    modalCategoryLock = getCategory(currentView) ? currentView : null;
+    catField.querySelectorAll('.pill').forEach(p=>{
+      p.classList.toggle('selected', p.dataset.cat===selectedCategory);
+      p.style.opacity = (modalCategoryLock && p.dataset.cat!==modalCategoryLock) ? '.4' : '1';
+      p.style.pointerEvents = modalCategoryLock ? 'none' : 'auto';
+    });
+    document.getElementById('f-due').min = new Date().toISOString().slice(0,10);
+    document.getElementById('f-due').value = new Date().toISOString().slice(0,10);
+    overlay.classList.remove('hidden');
+    document.getElementById('f-name').focus();
+  }
+  function closeModal(){ overlay.classList.add('hidden'); }
+
+  document.getElementById('fab').addEventListener('click', openModal);
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('cancel-btn').addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeModal(); });
+
+  form.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const name = document.getElementById('f-name').value.trim();
+    const due = document.getElementById('f-due').value;
+    if(!name){ document.getElementById('err-name').style.display='block'; return; }
+    if(!selectedCategory){ selectedCategory = CATEGORIES[0] ? CATEGORIES[0].key : null; }
+    if(!selectedPeriod){ selectedPeriod = 'morning'; }
+    if(!due || !selectedCategory){ return; }
+    await addTask({name, category:selectedCategory, period:selectedPeriod, dueDate:due});
+    closeModal();
+  });
+
+  /* ============ Manage tabs modal ============ */
+  const manageOverlay = document.getElementById('manage-overlay');
+  const manageList = document.getElementById('manage-list');
+  const newCatSwatches = document.getElementById('new-cat-swatches');
+
+  function buildSwatches(){
+    newCatSwatches.innerHTML = PRESET_COLORS.map((c,i)=>`<button type="button" class="swatch${i===0?' selected':''}" data-color="${c}" style="background:${c}"></button>`).join('');
+    selectedSwatch = PRESET_COLORS[0];
+    newCatSwatches.querySelectorAll('.swatch').forEach(s=>{
+      s.addEventListener('click', ()=>{
+        newCatSwatches.querySelectorAll('.swatch').forEach(x=>x.classList.remove('selected'));
+        s.classList.add('selected');
+        selectedSwatch = s.dataset.color;
+      });
+    });
+  }
+  function renderManageList(){
+    manageList.innerHTML = CATEGORIES.map(c=>`
+      <div class="manage-row" data-key="${c.key}">
+        <span class="manage-dot" style="background:${c.color}"></span>
+        <input type="text" value="${escapeHTML(c.label)}" data-rename="${c.key}" maxlength="16">
+        <button type="button" class="btn-icon" data-delete="${c.key}" title="刪除分頁">🗑</button>
+      </div>`).join('') || `<p style="color:var(--ink-soft); font-size:.85rem;">目前沒有分頁。</p>`;
+
+    manageList.querySelectorAll('[data-rename]').forEach(inp=>{
+      inp.addEventListener('change', ()=>renameCategory(inp.dataset.rename, inp.value));
+    });
+    manageList.querySelectorAll('[data-delete]').forEach(btn=>{
+      btn.addEventListener('click', ()=>deleteCategory(btn.dataset.delete));
+    });
+  }
+  document.getElementById('open-manage').addEventListener('click', ()=>{
+    buildSwatches();
+    renderManageList();
+    manageOverlay.classList.remove('hidden');
+  });
+  document.getElementById('manage-close').addEventListener('click', ()=>manageOverlay.classList.add('hidden'));
+  manageOverlay.addEventListener('click', (e)=>{ if(e.target===manageOverlay) manageOverlay.classList.add('hidden'); });
+
+  document.getElementById('add-cat-btn').addEventListener('click', async ()=>{
+    const nameInput = document.getElementById('new-cat-name');
+    const iconInput = document.getElementById('new-cat-icon');
+    if(!nameInput.value.trim()){ nameInput.focus(); return; }
+    await addCategory(nameInput.value, iconInput.value, selectedSwatch);
+    nameInput.value = ''; iconInput.value = '';
+  });
+
+  /* ============ Init ============ */
+  (async function init(){
+    CATEGORIES = await loadJSON('categories', defaultCategories);
+    TASKS = await loadJSON('tasks', demoTasks);
+    YOGA_STREAK = await loadJSON('yogaStreak', ()=>({count:0}));
+    render();
+  })();
+
+})();
+</script>
+</body>
+</html>
